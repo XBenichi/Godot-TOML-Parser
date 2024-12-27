@@ -12,7 +12,7 @@ var toml = TOMLParser.new() # Define the parser in your script
 
 var file = toml.parse("res://file.toml") # Load your TOML file from a specified path
 
-# After this, usage is exactly like JSON
+# After that, it behaves exactly like a dictionary
 
 print(file["variable"])
 
