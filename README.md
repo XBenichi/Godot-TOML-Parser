@@ -18,12 +18,9 @@ print(file["variable"])
 
 ```
 
-## List of current issues
+## List of currently known issues
 
-Octal and binary numbers aren't supported
-
-Complex Date-time (eg. 1979-05-27T00:32:00.999999-07:00) isn't valid
-
-Local date-time and seperate date and time aren't supported
-
-sub-tables such as "[fruits.physical]" and "[[fruits.varieties]]"; and multi-lined arrays aren't supported
+- Octal and binary numbers aren't supported
+- Complex Date-time (eg. 1979-05-27T00:32:00.999999-07:00) isn't valid
+- Local date-time and seperate date and time aren't supported
+- sub-tables such as "[fruits.physical]" and "[[fruits.varieties]]"; and multi-lined arrays aren't supported
