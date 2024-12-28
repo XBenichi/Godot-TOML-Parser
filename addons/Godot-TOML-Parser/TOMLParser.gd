@@ -125,13 +125,16 @@ func parse_table(line: String):
 	
 	var keys = table_name.split(".")
 	var current = parsed_data
+	
 	for key in keys:
 		if !key in current:
 			current[key] = {}
 		elif typeof(current[key]) != TYPE_DICTIONARY:
 			raise_error("Conflict with existing key: '%s'" % key)
 		current = current[key]
+	
 	return table_name
+
 
 
 func parse_array_table(line: String):
@@ -141,15 +144,24 @@ func parse_array_table(line: String):
 	
 	var keys = array_table_name.split(".")
 	var current = parsed_data
-	for key in keys:
+	
+	for i in range(keys.size() - 1):
+		var key = keys[i]
 		if !key in current:
-			current[key] = []
-		elif typeof(current[key]) != TYPE_ARRAY:
+			current[key] = {}
+		elif typeof(current[key]) != TYPE_DICTIONARY:
 			raise_error("Conflict with existing key: '%s'" % key)
 		current = current[key]
 	
-	current.append({})
+	var final_key = keys[-1]
+	if !final_key in current:
+		current[final_key] = []
+	elif typeof(current[final_key]) != TYPE_ARRAY:
+		raise_error("Conflict with existing key: '%s'" % final_key)
+	
+	current[final_key].append({})
 	return array_table_name
+
 
 
 func parse_key_value(line: String):
@@ -236,6 +248,7 @@ func parse_inline_table(inline_table_string: String):
 	if current_pair.strip_edges() != "":
 		key_value_pairs.append(current_pair.strip_edges())
 	
+	
 	for pair in key_value_pairs:
 		var split_index = pair.find("=")
 		if split_index == -1:
@@ -243,39 +256,7 @@ func parse_inline_table(inline_table_string: String):
 		
 		var key = pair.substr(0, split_index).strip_edges()
 		var value = parse_value(pair.substr(split_index + 1).strip_edges())
-		var keys = []
-		var temp = {}
-		
-		if "." in key:
-			keys = key.split(".")
-			
-			keys.invert()
-			
-			for i in keys:
-				if temp.empty():
-					temp[i] = value
-				else: 
-					temp[i] = {} 
-					if typeof(temp[temp.keys()[0]]) == TYPE_STRING:
-						temp[i][temp.keys()[0]] = temp[temp.keys()[0]]
-					else:
-						temp[i][temp.keys()[0]] = temp[temp.keys()[0]].duplicate()
-					temp.erase(temp.keys()[0])
-			
-			key = temp.duplicate()
-			
-			if typeof(key) == TYPE_STRING:
-				result[key] = value
-			elif typeof(key) == TYPE_DICTIONARY:
-				var root_key = key.keys()[0]
-				if root_key in result:
-					if typeof(result[root_key]) == TYPE_DICTIONARY and typeof(key[root_key]) == TYPE_DICTIONARY:
-						merge_dictionaries(result[root_key], key[root_key])
-					else:
-						raise_error("Key conflict at '%s'" % root_key)
-				else:
-					result[root_key] = key[root_key].duplicate()
-	
+		result[key] = value
 	
 	return result
 
@@ -283,11 +264,28 @@ func parse_inline_table(inline_table_string: String):
 
 
 func parse_array(array_string: String):
-	var items = array_string.split(",")
-	var result = []
-	for item in items:
-		result.append(parse_value(item.strip_edges()))
-	return result
+	var items = []
+	var current_item = ""
+	var open_brackets = 0
+	
+	for chara in array_string:
+		if chara == "[":
+			open_brackets += 1
+			current_item += chara
+		elif chara == "]":
+			open_brackets -= 1
+			current_item += chara
+		elif chara == "," and open_brackets == 0:
+			items.append(parse_value(current_item.strip_edges()))
+			current_item = ""
+		else:
+			current_item += chara
+	
+	if current_item.strip_edges() != "":
+		items.append(parse_value(current_item.strip_edges()))
+	
+	return items
+
 
 
 func parse_datetime(datetime_string: String):
@@ -329,7 +327,7 @@ func strip_inline_comments(line: String):
 func raise_error(message: String):
 	printerr(message)
 	push_error(message)
-#	assert(false, message)
+	#assert(false, message)
 
 func print_pretty_json(data):
 	var json_string = JSON.print(data, "\t")
